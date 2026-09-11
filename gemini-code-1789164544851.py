@@ -1,0 +1,436 @@
+html_content = """<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHENOMENON: PHANTOM SIGNAL - DOCTOR NOWHERE ANALOG HORROR</title>
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+    }
+    body {
+        background-color: #030303;
+        color: #d0d0d0;
+        font-family: 'Courier New', Courier, monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        overflow: hidden;
+    }
+
+    /* CRT TV Container */
+    #tv-frame {
+        position: relative;
+        width: 720px;
+        height: 540px;
+        background: #111;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 0 50px rgba(255, 0, 0, 0.15), inset 0 0 10px #000;
+        border: 4px solid #222;
+    }
+
+    #vhs-screen {
+        width: 100%;
+        height: 100%;
+        background-color: #050508;
+        border-radius: 12px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 25px;
+        overflow: hidden;
+        border: 2px solid #1a1a1a;
+        box-shadow: inset 0 0 80px rgba(0,0,0,0.8);
+    }
+
+    /* VHS Artifacts & Scanlines */
+    .scanlines {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
+        background-size: 100% 4px;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .vhs-noise {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        opacity: 0.05;
+        pointer-events: none;
+        background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>');
+        z-index: 9;
+    }
+
+    .vhs-header {
+        display: flex;
+        justify-content: space-between;
+        color: #00ff66;
+        font-weight: bold;
+        font-size: 1.1rem;
+        letter-spacing: 2px;
+        text-shadow: 0 0 5px #00ff66;
+        z-index: 5;
+    }
+
+    #display-area {
+        position: relative;
+        height: 280px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        z-index: 5;
+    }
+
+    #content-display {
+        font-size: 1.25rem;
+        color: #ff3333;
+        text-shadow: 2px 2px 0px #440000;
+        line-height: 1.5;
+        max-width: 90%;
+        font-weight: bold;
+    }
+
+    /* Entity Rendering (Boiled One / Phenomenon 228) */
+    #entity-face {
+        display: none;
+        margin-top: 15px;
+        color: #ff0000;
+        text-shadow: 0 0 15px #ff0000, 0 0 30px #880000;
+        font-size: 2.8rem;
+        letter-spacing: -2px;
+        line-height: 1;
+        animation: glitch 0.12s infinite alternate;
+    }
+
+    @keyframes glitch {
+        0% { transform: translate(0, 0) scale(1) skewX(0deg); filter: hue-rotate(0deg); }
+        20% { transform: translate(-3px, 2px) scale(1.02) skewX(3deg); }
+        40% { transform: translate(3px, -1px) scale(0.99) skewX(-2deg); }
+        60% { transform: translate(-2px, -2px) scale(1.04) skewX(1deg); filter: hue-rotate(90deg); }
+        80% { transform: translate(2px, 1px) scale(1) skewX(-4deg); }
+        100% { transform: translate(0, 0) scale(1.01) skewX(0deg); }
+    }
+
+    /* Closed Eyes Overlay */
+    #eyes-closed-overlay {
+        display: none;
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: #000;
+        z-index: 20;
+        color: #444;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        letter-spacing: 3px;
+    }
+
+    /* HUD Controls & Gauges */
+    #status-bar {
+        width: 720px;
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #111;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 1px solid #333;
+    }
+
+    .meter-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .meter-bar {
+        width: 150px;
+        height: 16px;
+        background: #222;
+        border: 1px solid #444;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    #meter-fill {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, #ff9900, #ff0000);
+        transition: width 0.1s linear;
+    }
+
+    #controls {
+        width: 720px;
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+    }
+
+    button {
+        background: #1a1a1a;
+        color: #eee;
+        border: 1px solid #444;
+        padding: 14px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    button:hover:not(:disabled) {
+        background: #2a2a2a;
+        border-color: #ff3333;
+        color: #ff3333;
+        box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
+    }
+
+    button:active:not(:disabled) {
+        transform: translateY(2px);
+    }
+
+    button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .danger-text {
+        color: #ff0000 !important;
+        text-shadow: 0 0 8px #ff0000;
+    }
+</style>
+</head>
+<body>
+
+<div id="tv-frame">
+    <div id="vhs-screen">
+        <div class="scanlines"></div>
+        <div class="vhs-noise"></div>
+        
+        <div class="vhs-header">
+            <span id="vhs-mode">PLAY ►</span>
+            <span>EAS-BROADCAST #228</span>
+        </div>
+        
+        <div id="display-area">
+            <div id="content-display">SISTEMA DE MONITOREO REGIONAL.<br>INICIE LA SINTONIZACIÓN DE LA TRANSMISIÓN.</div>
+            <div id="entity-face">
+          ▲   ▲<br>
+         ( 👁️ 🕳️ 👁️ )<br>
+          \  👄  /<br>
+           #####
+            </div>
+        </div>
+
+        <div style="color: #555; font-size: 0.8rem; display: flex; justify-content: space-between; z-index: 5;">
+            <span>ESTACIÓN DE TELECOMUNICACIONES #09</span>
+            <span>FREQ: 104.7 MHz</span>
+        </div>
+
+        <div id="eyes-closed-overlay">
+            <div style="margin-bottom: 10px;">[ OJOS CERRADOS ]</div>
+            <div style="font-size: 0.85rem; color: #333;">ESCUCHAS EL ZUMBIDO DE LA ESTÁTICA...</div>
+        </div>
+    </div>
+</div>
+
+<div id="status-bar">
+    <div class="meter-container">
+        <span style="font-size: 0.85rem; color: #aaa;">PARÁLISIS:</span>
+        <div class="meter-bar">
+            <div id="meter-fill"></div>
+        </div>
+        <span id="paralysis-num" style="color: #ff4444; font-weight: bold; width: 45px;">0%</span>
+    </div>
+    <div>
+        <span style="font-size: 0.85rem; color: #aaa;">ESTADO:</span>
+        <span id="status-text" style="color: #00ff66; font-weight: bold;">SEGURO</span>
+    </div>
+</div>
+
+<div id="controls">
+    <button id="btn-scan" onclick="scanSignal()">Sintonizar Canal</button>
+    <button id="btn-eyes" onmousedown="startClosingEyes()" onmouseup="stopClosingEyes()" onmouseleave="stopClosingEyes()" ontouchstart="startClosingEyes()" ontouchend="stopClosingEyes()">Cerrar Ojos (Mantener)</button>
+    <button id="btn-purge" onclick="clearBuffer()">Purgar Señal</button>
+</div>
+
+<script>
+    let paralysis = 0;
+    let entityActive = false;
+    let eyesClosed = false;
+    let gameOver = false;
+    let loopInterval = null;
+
+    const messages = [
+        "AVISO DE EMERGENCIA: Permanezca en sus hogares y apague todas las luces.",
+        "Si percibe el olor a carne quemada o escucha un zumbido agudo, responda afirmativamente.",
+        "FENÓMENO 228 REGISTRADO EN EL SECTOR. NO MIRE A LA PANTALLA.",
+        "ÉL PUEDE ESCUCHARTE A TRAVÉS DE LAS FRECUENCIAS DE RADIO.",
+        "EL HIRVIENTE HA SIDO RECONOCIDO EN MÁS DE 400 TRANSMISIONES.",
+        "NO INTENTE COMUNICARSE CON LAS ENTIDADES DE LA SEÑAL."
+    ];
+
+    // Audio Synthesizer (Web Audio API)
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new AudioCtx();
+        }
+    }
+
+    function playBeep(freq = 440, type = 'sine', duration = 0.15) {
+        try {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        } catch(e) {}
+    }
+
+    function playStatic() {
+        try {
+            initAudio();
+            const bufferSize = audioCtx.sampleRate * 0.1;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            const whiteNoise = audioCtx.createBufferSource();
+            whiteNoise.buffer = buffer;
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0.03;
+            whiteNoise.connect(gain);
+            gain.connect(audioCtx.destination);
+            whiteNoise.start();
+        } catch(e) {}
+    }
+
+    function updateGameLoop() {
+        if (gameOver) return;
+
+        if (entityActive && !eyesClosed) {
+            paralysis += 3;
+            if (Math.random() > 0.5) playBeep(120, 'sawtooth', 0.1);
+        } else if (eyesClosed) {
+            if (paralysis > 0) paralysis -= 2;
+        } else {
+            if (paralysis > 0) paralysis -= 0.5;
+        }
+
+        if (paralysis < 0) paralysis = 0;
+        if (paralysis >= 100) {
+            paralysis = 100;
+            triggerGameOver();
+        }
+
+        document.getElementById('meter-fill').style.width = paralysis + "%";
+        document.getElementById('paralysis-num').innerText = Math.floor(paralysis) + "%";
+    }
+
+    function scanSignal() {
+        if (gameOver) return;
+        playStatic();
+        
+        const isEntity = Math.random() < 0.45;
+        
+        if (isEntity) {
+            entityActive = true;
+            document.getElementById('entity-face').style.display = 'block';
+            document.getElementById('content-display').innerText = "¡AMENAZA DETECTADA!\nEL HIRVIENTE ESTÁ OBSERVANDO.";
+            document.getElementById('content-display').classList.add('danger-text');
+            document.getElementById('status-text').innerText = "AMENAZA ACTIVA";
+            document.getElementById('status-text').style.color = "#ff0000";
+            playBeep(200, 'square', 0.4);
+        } else {
+            entityActive = false;
+            document.getElementById('entity-face').style.display = 'none';
+            document.getElementById('content-display').classList.remove('danger-text');
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            document.getElementById('content-display').innerText = msg;
+            document.getElementById('status-text').innerText = "TRANSMITIENDO";
+            document.getElementById('status-text').style.color = "#00ff66";
+            playBeep(600, 'sine', 0.08);
+        }
+    }
+
+    function startClosingEyes() {
+        if (gameOver) return;
+        eyesClosed = true;
+        document.getElementById('eyes-closed-overlay').style.display = 'flex';
+        playBeep(300, 'sine', 0.1);
+    }
+
+    function stopClosingEyes() {
+        if (gameOver) return;
+        eyesClosed = false;
+        document.getElementById('eyes-closed-overlay').style.display = 'none';
+    }
+
+    function clearBuffer() {
+        if (gameOver) return;
+        playStatic();
+        
+        if (!entityActive) {
+            document.getElementById('content-display').innerText = "BUFFER PURGADO.\nESPERANDO NUEVA SEÑAL.";
+            document.getElementById('content-display').classList.remove('danger-text');
+        } else {
+            document.getElementById('content-display').innerText = "ERROR: SEÑAL BLOQUEADA POR LA ENTIDAD.\n¡DESVÍA LA MIRADA!";
+        }
+    }
+
+    function triggerGameOver() {
+        gameOver = true;
+        entityActive = false;
+        document.getElementById('entity-face').style.display = 'block';
+        document.getElementById('eyes-closed-overlay').style.display = 'none';
+        document.getElementById('content-display').innerText = "PARÁLISIS COMPLETA.\nHAS SIDO CONSUMIDO POR LA TRANSMISIÓN.";
+        document.getElementById('content-display').classList.add('danger-text');
+        document.getElementById('status-text').innerText = "SUJETO CAÍDO";
+        document.getElementById('status-text').style.color = "#ff0000";
+        document.getElementById('vhs-mode').innerText = "STOP █";
+        document.getElementById('vhs-mode').style.color = "#ff0000";
+        
+        document.getElementById('btn-scan').disabled = true;
+        document.getElementById('btn-eyes').disabled = true;
+        document.getElementById('btn-purge').disabled = true;
+        
+        playBeep(100, 'sawtooth', 1.5);
+    }
+
+    loopInterval = setInterval(updateGameLoop, 150);
+</script>
+
+</body>
+</html>
+"""
+
+with open("juego.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print("El archivo juego.html ha sido generado con éxito.")
